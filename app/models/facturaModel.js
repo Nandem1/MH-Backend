@@ -1,32 +1,27 @@
 const pool = require("../../config/dbConfig");
 
-const createOrUpdateFactura = async (facturas) => {
+const createOrUpdateFactura = async (folio, proveedor, image_url) => {
     const client = await pool.connect(); // Obtener una conexión del pool
     
     try {
         // Iniciar una transacción
         await client.query("BEGIN");
 
-        // Iterar sobre cada factura
-        for (const factura of facturas) {
-            const { folio, proveedor, image_url } = factura;
+        // Consulta SQL parametrizada
+        const query = `
+            INSERT INTO facturas (folio, proveedor, image_url)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (folio) DO UPDATE
+            SET 
+                proveedor = EXCLUDED.proveedor,
+                image_url = EXCLUDED.image_url;
+        `;
 
-            // Consulta SQL parametrizada
-            const query = `
-                INSERT INTO facturas (folio, proveedor, image_url)
-                VALUES ($1, $2, $3)
-                ON CONFLICT (folio) DO UPDATE
-                SET 
-                    proveedor = EXCLUDED.proveedor,
-                    image_url = EXCLUDED.image_url;
-            `;
+        // Valores para la consulta
+        const values = [folio, proveedor, image_url];
 
-            // Valores para la consulta
-            const values = [folio, proveedor, image_url];
-
-            // Ejecutar la consulta
-            await client.query(query, values);
-        }
+        // Ejecutar la consulta
+        await client.query(query, values);
 
         // Confirmar la transacción
         await client.query("COMMIT");
