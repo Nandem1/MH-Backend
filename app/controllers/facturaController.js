@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const sharp = require('sharp');
 const {
   createOrUpdateFactura,
   getFacturaByFolio,
@@ -27,8 +28,19 @@ const uploadFactura = async (req, res) => {
     // Mover el archivo al nuevo nombre
     fs.renameSync(file.path, newFilePath);
 
+    // Comprimir la imagen antes de subirla
+    const compressedFilePath = path.join(path.dirname(newFilePath), `compressed_${newFileName}`);
+    console.time("Compresión de Imagen");
+    await sharp(newFilePath)
+      .resize({ width: 1024 }) // Ajustar tamaño
+      .jpeg({ quality: 80 }) // Reducir calidad
+      .toFile(compressedFilePath);
+    console.timeEnd("Compresión de Imagen");
+
     // Subir a Google Drive
+    console.time("Subida a Google Drive");
     const driveFile = await uploadToDrive(newFilePath, newFileName);
+    console.timeEnd("Subida a Google Drive");
 
     // Guardar en PostgreSQL
     const factura = await createOrUpdateFactura(
@@ -37,8 +49,9 @@ const uploadFactura = async (req, res) => {
       driveFile.url
     );
 
-    // Eliminar archivo local después de subirlo
+    // Eliminar archivos temporales
     fs.unlinkSync(newFilePath);
+    fs.unlinkSync(compressedFilePath);
 
     res.status(201).json({ message: "Factura subida con éxito", factura });
   } catch (error) {
