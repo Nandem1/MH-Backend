@@ -1,6 +1,6 @@
 const pool = require("../../config/dbConfig");
 
-const createOrUpdateFactura = async (folio, proveedor, image_url) => {
+const createFactura = async (folio, proveedor, image_url) => {
     const client = await pool.connect(); // Obtener una conexión del pool
     
     try {
@@ -10,11 +10,7 @@ const createOrUpdateFactura = async (folio, proveedor, image_url) => {
         // Consulta SQL parametrizada
         const query = `
             INSERT INTO facturas (folio, proveedor, image_url)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (folio) DO UPDATE
-            SET 
-                proveedor = EXCLUDED.proveedor,
-                image_url = EXCLUDED.image_url;
+            VALUES ($1, $2, $3);
         `;
 
         // Valores para la consulta
@@ -28,7 +24,7 @@ const createOrUpdateFactura = async (folio, proveedor, image_url) => {
     } catch (error) {
         // Revertir la transacción en caso de error
         await client.query("ROLLBACK");
-        console.error("Error en createOrUpdateFactura:", error);
+        console.error("Error en createFactura:", error);
         throw error;
     } finally {
         // Liberar la conexión
@@ -39,10 +35,10 @@ const createOrUpdateFactura = async (folio, proveedor, image_url) => {
 const getFacturaByFolio = async (folio) => {
     const client = await pool.connect(); // Obtener una conexión del pool
     try {
-        // Consulta SQL para obtener la factura por folio
+        // Consulta SQL para obtener las facturas por folio
         const query = 'SELECT * FROM facturas WHERE folio = $1';
         const { rows } = await client.query(query, [folio]); // Ejecutar la consulta
-        return rows[0]; // Devolver el primer resultado si existe
+        return rows; // Devolver todas las facturas con el mismo folio
     } catch (error) {
         console.error('Error en el modelo al obtener la factura:', error);
         throw error; // Relanzar el error para manejarlo en el controlador
@@ -52,4 +48,4 @@ const getFacturaByFolio = async (folio) => {
     }
 };
 
-module.exports = { createOrUpdateFactura, getFacturaByFolio };
+module.exports = { createFactura, getFacturaByFolio };
