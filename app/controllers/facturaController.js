@@ -29,7 +29,7 @@ const uploadFactura = async (req, res) => {
     console.time("Compresión de Imagen");
     await sharp(newFilePath)
       .resize({ width: 1024 }) // Ajustar tamaño
-      .jpeg({ quality: 80 }) // Reducir calidad
+      .jpeg({ quality: 50 }) // Reducir calidad
       .toFile(compressedFilePath);
     console.timeEnd("Compresión de Imagen");
 
